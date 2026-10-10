@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>حاسبة العمر</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--text:#1b2138;--muted:#6b7390;--accent:#6c5ce7;--accent2:#00b4d8;--line:#e4e8f3;--chip:#eef0fb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1220;--card:#181c30;--text:#eef0ff;--muted:#9aa1c4;--line:#262b47;--chip:#222744}}
+:root[data-theme="dark"]{--bg:#0f1220;--card:#181c30;--text:#eef0ff;--muted:#9aa1c4;--line:#262b47;--chip:#222744}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Cairo',system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px 16px}
+.wrap{width:100%;max-width:560px}
+h1{text-align:center;font-weight:800;font-size:1.8rem;margin:8px 0 4px}
+.sub{text-align:center;color:var(--muted);margin:0 0 22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(108,92,231,.08);margin-bottom:16px}
+label{display:block;font-weight:600;margin-bottom:8px}
+input[type=date]{direction:ltr;text-align:center;unicode-bidi:isolate;min-height:52px;width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-size:1rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{border:0;background:var(--chip);color:var(--text);padding:9px 14px;border-radius:999px;font:inherit;cursor:pointer;font-weight:600}
+.chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.big{text-align:center}
+.big .num{font-size:clamp(2rem,9vw,3rem);font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;direction:ltr;word-break:break-all}
+.big .u{color:var(--muted);font-weight:600}
+.ymd{display:flex;justify-content:space-around;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+.ymd b{display:block;font-size:1.5rem}.ymd span{color:var(--muted);font-size:.9rem}.ymd div{text-align:center}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cell{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.cell b{display:block;font-size:1.1rem;direction:ltr}.cell span{color:var(--muted);font-size:.85rem}
+.bd{text-align:center;font-weight:600}
+.err{color:#e5484d;text-align:center;min-height:1.2em;margin-top:8px}
+.hide{display:none}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{flex:1;min-width:140px;border:0;border-radius:14px;padding:14px;font:inherit;font-weight:700;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.btn.wa{background:#25d366}
+.toast{text-align:center;color:var(--accent);font-weight:600;min-height:1.4em;margin-bottom:10px}
+footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎂 حاسبة العمر</h1>
+  <p class="sub">اعرف عمرك بالسنين والشهور والأيام وحتى الثواني</p>
+
+  <div class="card">
+    <label for="dob">تاريخ ميلادك</label>
+    <input type="date" id="dob" dir="ltr" lang="en-GB">
+    <div class="err" id="err"></div>
+  </div>
+
+  <div id="out" class="hide">
+    <div class="card big">
+      <div class="u">لقد عشت</div>
+      <div class="num" id="main">0</div>
+      <div class="u" id="mainU">ثانية</div>
+      <div class="chips" style="justify-content:center;margin-top:14px" id="chips"></div>
+      <div class="ymd">
+        <div><b id="yy">0</b><span>سنة</span></div>
+        <div><b id="mm">0</b><span>شهر</span></div>
+        <div><b id="dd">0</b><span>يوم</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="grid" id="grid"></div>
+    </div>
+    <div class="card bd" id="bd"></div>
+    <div class="actions">
+      <button class="btn" id="share">📤 شارك نتيجتي</button>
+      <button class="btn wa" id="wa">واتساب</button>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+  <footer>الأشهر محسوبة بالتقويم الفعلي والسنوات الكبيسة محسوبة تلقائيًا</footer>
+</div>
+
+<script>
+const units=[
+  {k:'months',n:'شهر',a:'mo'},{k:'weeks',n:'أسبوع',a:'w'},{k:'days',n:'يوم',a:'d'},
+  {k:'hours',n:'ساعة',a:'h'},{k:'minutes',n:'دقيقة',a:'min'},{k:'seconds',n:'ثانية',a:'s'}
+];
+let sel='seconds',dob=null,timer=null;
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.floor(n).toLocaleString('en-US');
+
+function calc(b,now){
+  const ms=now-b;
+  let y=now.getFullYear()-b.getFullYear(),m=now.getMonth()-b.getMonth(),d=now.getDate()-b.getDate();
+  if(d<0){m--;d+=new Date(now.getFullYear(),now.getMonth(),0).getDate()}
+  if(m<0){y--;m+=12}
+  const totalMonths=y*12+m;
+  const days=Math.floor(ms/864e5);
+  return {y,m,d,months:totalMonths,weeks:Math.floor(days/7),days,
+    hours:Math.floor(ms/36e5),minutes:Math.floor(ms/6e4),seconds:Math.floor(ms/1e3)};
+}
+function nextBirthday(b,now){
+  let n=new Date(now.getFullYear(),b.getMonth(),b.getDate());
+  if(n<new Date(now.getFullYear(),now.getMonth(),now.getDate()))n=new Date(now.getFullYear()+1,b.getMonth(),b.getDate());
+  return Math.round((n-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/864e5);
+}
+function render(){
+  if(!dob)return;
+  const now=new Date(),r=calc(dob,now);
+  const u=units.find(x=>x.k===sel);
+  $('main').textContent=fmt(r[sel]);$('mainU').textContent=u.n;
+  $('yy').textContent=r.y;$('mm').textContent=r.m;$('dd').textContent=r.d;
+  $('grid').innerHTML=units.map(x=>`<div class="cell"><b>${fmt(r[x.k])}</b><span>${x.n}</span></div>`).join('');
+  const left=nextBirthday(dob,now);
+  $('bd').textContent=left===0?'🎉 كل سنة وانت طيب! النهارده عيد ميلادك':`🎁 باقي ${left} يوم على عيد ميلادك الجاي`;
+}
+function start(){
+  const v=$('dob').value;$('err').textContent='';
+  if(!v){$('out').classList.add('hide');return}
+  const b=new Date(v+'T00:00:00');
+  if(b>new Date()){$('err').textContent='تاريخ الميلاد لازم يكون في الماضي';$('out').classList.add('hide');return}
+  if(b.getFullYear()<1900){$('err').textContent='من فضلك أدخل تاريخًا صحيحًا';$('out').classList.add('hide');return}
+  dob=b;$('out').classList.remove('hide');render();
+  clearInterval(timer);timer=setInterval(render,1000);
+  try{localStorage.setItem('dob',v)}catch(e){}
+}
+$('chips').innerHTML=units.map(x=>`<button class="chip${x.k===sel?' on':''}" data-k="${x.k}">${x.n}</button>`).join('');
+$('chips').addEventListener('click',e=>{
+  const k=e.target.dataset.k;if(!k)return;sel=k;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.k===k));render();
+});
+function shareText(){
+  const r=calc(dob,new Date()),u=units.find(x=>x.k===sel);
+  return `🎂 أنا عشت ${fmt(r[sel])} ${u.n} حتى الآن!\n(${r.y} سنة و${r.m} شهر و${r.d} يوم)\nجرب احسب عمرك انت كمان 👇`;
+}
+function toast(t){$('toast').textContent=t;setTimeout(()=>$('toast').textContent='',2500)}
+$('share').addEventListener('click',async()=>{
+  if(!dob)return;
+  const url=location.href.split('#')[0],text=shareText();
+  try{
+    if(navigator.share){await navigator.share({title:'حاسبة العمر',text,url});return}
+    await navigator.clipboard.writeText(text+'\n'+url);toast('تم نسخ النتيجة ✅ الصقها في أي مكان');
+  }catch(e){}
+});
+$('wa').addEventListener('click',()=>{
+  if(!dob)return;
+  window.open('https://wa.me/?text='+encodeURIComponent(shareText()+'\n'+location.href.split('#')[0]),'_blank');
+});
+$('dob').max=new Date().toISOString().slice(0,10);
+$('dob').addEventListener('change',start);
+try{const s=localStorage.getItem('dob');if(s){$('dob').value=s;start()}}catch(e){}
+</script>
+</body>
+</html>
