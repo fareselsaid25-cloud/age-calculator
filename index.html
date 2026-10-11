@@ -3,7 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>حاسبة العمر</title>
+<title>حاسبة العمر 🎂 اعرف عمرك بالثواني</title>
+<meta name="description" content="اعرف عمرك بالسنين والشهور والأيام والساعات والثواني مع عدّاد حي وعدّاد لعيد ميلادك الجاي.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fareselsaid25-cloud.github.io/age-calculator/">
+<link rel="canonical" href="https://fareselsaid25-cloud.github.io/age-calculator/">
+<meta property="og:title" content="حاسبة العمر 🎂 كم ثانية عشت؟">
+<meta property="og:description" content="اعرف عمرك بالسنين والشهور والأيام والثواني وشارك نتيجتك مع أصحابك">
+<meta property="og:image" content="https://fareselsaid25-cloud.github.io/age-calculator/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ar_AR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://fareselsaid25-cloud.github.io/age-calculator/og-image.png">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f4f6fb;--card:#fff;--text:#1b2138;--muted:#6b7390;--accent:#6c5ce7;--accent2:#00b4d8;--line:#e4e8f3;--chip:#eef0fb;
@@ -31,6 +43,8 @@ input[type=date]{direction:ltr;text-align:center;unicode-bidi:isolate;min-height
 .cell{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
 .cell b{display:block;font-size:1.1rem;direction:ltr}.cell span{color:var(--muted);font-size:.85rem}
 .bd{text-align:center;font-weight:600}
+.dsel{display:flex;gap:8px}
+.dsel select{flex:1;min-width:0;padding:14px 10px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-size:1rem;text-align:center;text-align-last:center}
 .err{color:#e5484d;text-align:center;min-height:1.2em;margin-top:8px}
 .hide{display:none}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
@@ -47,7 +61,7 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:8px}
 
   <div class="card">
     <label for="dob">تاريخ ميلادك</label>
-    <input type="date" id="dob" dir="ltr" lang="en-GB">
+    <div class="dsel"><select id="dday" aria-label="اليوم"></select><select id="dm" aria-label="الشهر"></select><select id="dy" aria-label="السنة"></select></div>
     <div class="err" id="err"></div>
   </div>
 
@@ -111,7 +125,9 @@ function render(){
   $('bd').textContent=left===0?'🎉 كل سنة وانت طيب! النهارده عيد ميلادك':`🎁 باقي ${left} يوم على عيد ميلادك الجاي`;
 }
 function start(){
-  const v=$('dob').value;$('err').textContent='';
+  const dy=$('dy').value,dm=$('dm').value,dday=$('dday').value;$('err').textContent='';
+  const v=(dy&&dm&&dday)?`${dy}-${String(dm).padStart(2,'0')}-${String(dday).padStart(2,'0')}`:'';
+  if(v&&new Date(+dy,+dm-1,+dday).getMonth()!==+dm-1){$('err').textContent='التاريخ ده مش موجود في التقويم';$('out').classList.add('hide');return}
   if(!v){$('out').classList.add('hide');return}
   const b=new Date(v+'T00:00:00');
   if(b>new Date()){$('err').textContent='تاريخ الميلاد لازم يكون في الماضي';$('out').classList.add('hide');return}
@@ -142,9 +158,16 @@ $('wa').addEventListener('click',()=>{
   if(!dob)return;
   window.open('https://wa.me/?text='+encodeURIComponent(shareText()+'\n'+location.href.split('#')[0]),'_blank');
 });
-$('dob').max=new Date().toISOString().slice(0,10);
-$('dob').addEventListener('change',start);
-try{const s=localStorage.getItem('dob');if(s){$('dob').value=s;start()}}catch(e){}
+(function(){
+  const months=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  $('dday').innerHTML='<option value="">اليوم</option>'+Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
+  $('dm').innerHTML='<option value="">الشهر</option>'+months.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  let ys='<option value="">السنة</option>';
+  for(let y=new Date().getFullYear();y>=1920;y--)ys+=`<option value="${y}">${y}</option>`;
+  $('dy').innerHTML=ys;
+})();
+['dday','dm','dy'].forEach(id=>$(id).addEventListener('change',start));
+try{const s=localStorage.getItem('dob');if(s){const [y,m,d]=s.split('-').map(Number);$('dy').value=y;$('dm').value=m;$('dday').value=d;start()}}catch(e){}
 </script>
 </body>
 </html>
